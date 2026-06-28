@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Stream | Distraction-Free Study</title>
+    <style>
+        /* Base Theme */
+        :root {
+            --leaf-green: #2e7d32;
+            --light-green: #e8f5e9;
+            --accent-green: #4caf50;
+            --pure-white: #ffffff;
+            --text-dark: #333333;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-green);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Prevents scrollbars from falling leaves */
+        }
+
+        /* Floating Leaves Animation */
+        .leaves-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows you to click through the leaves */
+            z-index: 0;
+        }
+
+        .leaf {
+            position: absolute;
+            top: -50px;
+            font-size: 24px;
+            opacity: 0.3; /* Keeps them subtle */
+            animation: drift linear infinite;
+        }
+
+        @keyframes drift {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Leaf positioning and timing */
+        .leaf:nth-child(1) { left: 10%; animation-duration: 12s; animation-delay: 0s; }
+        .leaf:nth-child(2) { left: 25%; animation-duration: 15s; animation-delay: 2s; font-size: 18px; }
+        .leaf:nth-child(3) { left: 50%; animation-duration: 11s; animation-delay: 4s; font-size: 28px; }
+        .leaf:nth-child(4) { left: 75%; animation-duration: 14s; animation-delay: 1s; }
+        .leaf:nth-child(5) { left: 90%; animation-duration: 13s; animation-delay: 3s; font-size: 20px; }
+
+        /* Main Workspace Container */
+        .container {
+            background-color: var(--pure-white);
+            width: 90%;
+            max-width: 900px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(46, 125, 50, 0.2);
+            padding: 40px;
+            text-align: center;
+            border-top: 8px solid var(--leaf-green);
+            position: relative;
+            z-index: 1; /* Keeps the workspace above the floating leaves */
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--leaf-green);
+            margin: 0;
+            font-size: 2.2rem;
+        }
+
+        .header p {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            width: 70%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: 2px solid #c8e6c9;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--leaf-green);
+        }
+
+        button {
+            background-color: var(--leaf-green);
+            color: var(--pure-white);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1b5e20;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            background-color: #f1f1f1;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+            background-color: var(--light-green);
+            border-radius: 12px;
+            border: 2px dashed #a5d6a7;
+            color: var(--leaf-green);
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            margin-top: 10px;
+            font-weight: bold;
+            display: none;
+        }
+
+        /* Break Timer Widget */
+        .timer-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--pure-white);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(46, 125, 50, 0.2);
+            border-bottom: 4px solid var(--accent-green);
+            z-index: 10;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timer-title {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .timer-display {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--leaf-green);
+            font-variant-numeric: tabular-nums;
+            margin: 5px 0;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .timer-controls button {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .timer-controls .secondary-btn {
+            background-color: #e0e0e0;
+            color: var(--text-dark);
+        }
+
+        .timer-controls .secondary-btn:hover {
+            background-color: #bdbdbd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="leaves-container">
+        <div class="leaf">🍃</div>
+        <div class="leaf">🍃</div>
+        <div class="leaf">🍃</div>
+        <div class="leaf">🍃</div>
+        <div class="leaf">🍃</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🌿 Focus Stream</h1>
+            <p>Your minimalist, distraction-free study space.</p>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="youtube-url" placeholder="Paste your YouTube video or Live link here...">
+            <button onclick="loadVideo()">Load Video</button>
+        </div>
+        
+        <div id="error-text" class="error-message">Please enter a valid YouTube link.</div>
+
+        <div id="video-container" class="video-wrapper">
+            <iframe id="youtube-player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+            <p>Paste a link above to start studying.</p>
+        </div>
+    </div>
+
+    <div class="timer-widget">
+        <div class="timer-title">Break Timer</div>
+        <div class="timer-display" id="timer-display">05:00</div>
+        <div class="timer-controls">
+            <button id="start-pause-btn" onclick="toggleTimer()">Start</button>
+            <button class="secondary-btn" onclick="resetTimer()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Video Player Logic ---
+        function loadVideo() {
+            const urlInput = document.getElementById('youtube-url').value;
+            const videoContainer = document.getElementById('video-container');
+            const iframe = document.getElementById('youtube-player');
+            const emptyState = document.getElementById('empty-state');
+            const errorText = document.getElementById('error-text');
+
+            const videoId = extractVideoID(urlInput);
+
+            if (videoId) {
+                errorText.style.display = 'none';
+                emptyState.style.display = 'none';
+                videoContainer.style.display = 'block';
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+            } else {
+                errorText.style.display = 'block';
+                videoContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                iframe.src = "";
+            }
+        }
+
+        function extractVideoID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // --- Break Timer Logic ---
+        let timerInterval;
+        let timeLeft = 300; // 5 minutes in seconds
+        let isRunning = false;
+
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const displayString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('timer-display').innerText = displayString;
+            
+            // Updates the browser tab title so you can see time left even if you look away
+            if(isRunning) {
+                document.title = `(${displayString}) Break | Focus Stream`;
+            } else {
+                document.title = `Focus Stream | Distraction-Free Study`;
+            }
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('start-pause-btn');
+            if (isRunning) {
+                clearInterval(timerInterval);
+                btn.innerText = 'Start';
+                isRunning = false;
+                updateDisplay();
+            } else {
+                if (timeLeft === 0) resetTimer(); // Auto-reset if starting from zero
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        btn.innerText = 'Start';
+                        updateDisplay();
+                        alert("Break is over! Time to get back to class."); // Browser alert when done
+                    }
+                }, 1000);
+                btn.innerText = 'Pause';
+                isRunning = true;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 300; // Resets back to 5 minutes
+            isRunning = false;
+            document.getElementById('start-pause-btn').innerText = 'Start';
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
